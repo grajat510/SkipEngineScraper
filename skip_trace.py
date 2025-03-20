@@ -22,6 +22,67 @@ headers = {
     "Content-Type": "application/json"
 }
 
+# Dictionary mapping full state names to 2-character codes
+STATE_MAPPING = {
+    "alabama": "AL",
+    "alaska": "AK",
+    "arizona": "AZ",
+    "arkansas": "AR",
+    "california": "CA",
+    "colorado": "CO",
+    "connecticut": "CT",
+    "delaware": "DE",
+    "florida": "FL",
+    "georgia": "GA",
+    "hawaii": "HI",
+    "idaho": "ID",
+    "illinois": "IL",
+    "indiana": "IN",
+    "iowa": "IA",
+    "kansas": "KS",
+    "kentucky": "KY",
+    "louisiana": "LA",
+    "maine": "ME",
+    "maryland": "MD",
+    "massachusetts": "MA",
+    "michigan": "MI",
+    "minnesota": "MN",
+    "mississippi": "MS",
+    "missouri": "MO",
+    "montana": "MT",
+    "nebraska": "NE",
+    "nevada": "NV",
+    "new hampshire": "NH",
+    "new jersey": "NJ",
+    "new mexico": "NM",
+    "new york": "NY",
+    "north carolina": "NC",
+    "north dakota": "ND",
+    "ohio": "OH",
+    "oklahoma": "OK",
+    "oregon": "OR",
+    "pennsylvania": "PA",
+    "rhode island": "RI",
+    "south carolina": "SC",
+    "south dakota": "SD",
+    "tennessee": "TN",
+    "texas": "TX",
+    "utah": "UT",
+    "vermont": "VT",
+    "virginia": "VA",
+    "washington": "WA",
+    "west virginia": "WV",
+    "wisconsin": "WI",
+    "wyoming": "WY",
+    "district of columbia": "DC",
+    "american samoa": "AS",
+    "guam": "GU",
+    "northern mariana islands": "MP",
+    "puerto rico": "PR",
+    "united states minor outlying islands": "UM",
+    "u.s. virgin islands": "VI",
+}
+
 def extract_5digit_zip(zip_code):
     """Extract the first 5 digits from a ZIP code that might be in ZIP+4 format"""
     if not zip_code:
@@ -32,6 +93,28 @@ def extract_5digit_zip(zip_code):
         return match.group(0)
     return str(zip_code)
 
+def convert_state_to_code(state):
+    """Convert full state name to 2-character state code"""
+    if not state:
+        return ""
+    
+    # If it's already a 2-character code, return it
+    if len(state) == 2 and state.upper() in STATE_MAPPING.values():
+        return state.upper()
+    
+    # Otherwise, look up the state name in our mapping
+    state_lower = state.lower()
+    if state_lower in STATE_MAPPING:
+        return STATE_MAPPING[state_lower]
+    
+    # Try to match partial state names (e.g., "New" for "New York")
+    for full_name, code in STATE_MAPPING.items():
+        if state_lower in full_name:
+            return code
+    
+    # Return the original if we can't find a match
+    return state[:2].upper() if len(state) >= 2 else state
+
 def skip_trace_contact(first_name, middle_name, last_name, address, city, state, zip_code):
     """
     Skip trace a single contact using SkipEngine API
@@ -40,13 +123,16 @@ def skip_trace_contact(first_name, middle_name, last_name, address, city, state,
     # Extract just the 5-digit ZIP code
     zip_5digit = extract_5digit_zip(zip_code)
     
+    # Convert state name to 2-character code
+    state_code = convert_state_to_code(state)
+    
     # Prepare the payload according to SkipEngine API documentation
     payload = {
         "FName": first_name,
         "LName": last_name,
         "Address1": address,
         "City": city,
-        "State": state,
+        "State": state_code,  # Use the converted state code
         "Zip": zip_5digit
     }
     
